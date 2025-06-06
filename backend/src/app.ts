@@ -1,4 +1,5 @@
 import express, { Application } from "express";
+import { authRoutes } from "./routes";
 
 const app: Application = express();
 
@@ -6,8 +7,6 @@ const app: Application = express();
 app.use(express.json());
 
 /** Routes */
-app.get("/", (req, res) => {
-    res.send("Hello World!");
-});
+app.use("/api/v1/auth", authRoutes);
 
 export default app;
