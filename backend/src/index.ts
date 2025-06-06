@@ -1,14 +1,18 @@
-import express from "express";
+import app from "./app";
 import { config } from "./config";
+import connectDB from "./db";
 
-const app = express();
+connectDB()
+    .then(() => {
+        app.on("error", (error) => {
+            console.log("ERROR: ", error);
+            throw error;
+        });
 
-app.get("/", (req, res) => {
-    res.send("Hello World!");
-});
-
-app.listen(config.PORT, () => {
-    console.log(`Server running on port ${config.PORT}`);
-});
-
-export default app;
+        app.listen(config.PORT, () => {
+            console.log(`Server running on port ${config.PORT}`);
+        });
+    })
+    .catch((err) => {
+        console.log("MONGODB connection failed: ", err);
+    });
