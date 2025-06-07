@@ -59,6 +59,7 @@ const userRegister = async (req: Request, res: Response): Promise<any> => {
                 data: {
                     id: user._id,
                     access_token,
+                    refresh_token,
                 },
             });
     } catch (error) {
@@ -90,26 +91,25 @@ const userLogin = async (req: Request, res: Response): Promise<any> => {
             });
         }
 
-        const payload: JwtPayload = { id: user._id };
-        const accessToken = jwt.sign(payload, config.JWT_SECRET, {
+        const access_token = jwt.sign({ id: user._id }, config.JWT_SECRET, {
             expiresIn: "1h",
         });
-        const refreshToken = jwt.sign(payload, config.JWT_SECRET, {
+        const refresh_token = jwt.sign({ id: user._id }, config.JWT_SECRET, {
             expiresIn: "7d",
         });
 
-        user.refreshToken = refreshToken;
+        user.refreshToken = refresh_token;
         await user.save();
 
         return res
             .status(200)
-            .cookie("refresh_token", refreshToken, {
+            .cookie("refresh_token", refresh_token, {
                 httpOnly: true,
                 sameSite: "strict",
                 secure: false,
                 maxAge: 7 * 24 * 60 * 60 * 1000,
             })
-            .cookie("access_token", accessToken, {
+            .cookie("access_token", access_token, {
                 httpOnly: true,
                 sameSite: "strict",
                 secure: false,
@@ -120,7 +120,8 @@ const userLogin = async (req: Request, res: Response): Promise<any> => {
                 message: "User logged in successfully",
                 data: {
                     id: user._id,
-                    access_token: accessToken,
+                    access_token,
+                    refresh_token,
                 },
             });
     } catch (error) {
@@ -153,7 +154,10 @@ const userLogout = async (req: Request, res: Response): Promise<any> => {
 };
 
 // Refresh token
-const refreshAccessToken = async (req: Request, res: Response): Promise<any> => {
+const refreshAccessToken = async (
+    req: Request,
+    res: Response
+): Promise<any> => {
     try {
         const { refresh_token } = req.cookies || req.body;
         if (!refresh_token) {
@@ -209,6 +213,7 @@ const refreshAccessToken = async (req: Request, res: Response): Promise<any> => 
                 data: {
                     id: user._id,
                     access_token: accessToken,
+                    refresh_token: newRefreshToken,
                 },
             });
     } catch (error) {
@@ -220,4 +225,3 @@ const refreshAccessToken = async (req: Request, res: Response): Promise<any> => 
 };
 
 export { refreshAccessToken, userLogin, userLogout, userRegister };
-
