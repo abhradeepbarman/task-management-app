@@ -1,5 +1,5 @@
 import express, { Application } from "express";
-import { authRoutes } from "./routes";
+import { authRoutes, teamMemberRoutes } from "./routes";
 import cors from "cors";
 
 const app: Application = express();
@@ -10,5 +10,6 @@ app.use(cors());
 
 /** Routes */
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/teams", teamMemberRoutes);
 
 export default app;
