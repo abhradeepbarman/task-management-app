@@ -14,7 +14,7 @@ import { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Login = () => {
     const {
@@ -33,18 +33,24 @@ const Login = () => {
 
     useEffect(() => {
         if (accessToken) {
-            <Navigate to="/" />;
+            navigate("/dashboard");
         }
-    }, [accessToken]);
+    }, [accessToken, navigate]);
 
     const onsubmit = async (data: { email: string; password: string }) => {
         setLoading(true);
         try {
             const response = await axiosInstance.post("/auth/login", data);
             console.log("response", response);
-            localStorage.setItem("accessToken", response.data.data.access_token);
-            localStorage.setItem("refreshToken", response.data.data.refresh_token);
-            navigate("/");
+            localStorage.setItem(
+                "accessToken",
+                response.data.data.access_token
+            );
+            localStorage.setItem(
+                "refreshToken",
+                response.data.data.refresh_token
+            );
+            navigate("/dashboard");
         } catch (error) {
             console.log("error", error);
             if (error instanceof AxiosError) {
@@ -115,7 +121,11 @@ const Login = () => {
                     </div>
                 </CardContent>
                 <CardFooter className="flex flex-col">
-                    <Button className="w-full cursor-pointer" type="submit" disabled={loading}>
+                    <Button
+                        className="w-full cursor-pointer"
+                        type="submit"
+                        disabled={loading}
+                    >
                         {loading ? (
                             <svg
                                 className="animate-spin h-8 w-8 text-black"

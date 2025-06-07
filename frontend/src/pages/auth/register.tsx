@@ -14,7 +14,7 @@ import { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Register = () => {
     const {
@@ -34,9 +34,9 @@ const Register = () => {
 
     useEffect(() => {
         if (accessToken) {
-            <Navigate to="/" />;
+            navigate("/dashboard");
         }
-    }, [accessToken]);
+    }, [accessToken, navigate]);
 
     const onsubmit = async (data: {
         name: string;
@@ -48,7 +48,7 @@ const Register = () => {
             const response = await axiosInstance.post("/auth/register", data);
             localStorage.setItem("accessToken", response.data.access_token);
             localStorage.setItem("refreshToken", response.data.refresh_token);
-            navigate("/");
+            navigate("/dashboard");
         } catch (error) {
             console.log(error);
             if (error instanceof AxiosError) {
