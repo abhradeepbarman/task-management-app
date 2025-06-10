@@ -1,4 +1,4 @@
-import { BarChart2, CheckSquare, FolderKanban, Users } from "lucide-react";
+import { CheckSquare, FolderKanban, Users } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import LogoutButton from "./LogoutButton";
 
@@ -10,25 +10,13 @@ const Navbar = () => {
         <nav className="flex px-6 py-3 bg-white shadow-sm">
             <div
                 className="text-2xl font-bold text-gray-900 mr-8 cursor-pointer"
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/team-members")}
             >
                 TaskFlow
             </div>
 
             <div className="flex justify-between w-full items-center">
                 <ul className="flex items-center space-x-6">
-                    <Link
-                        to={"/"}
-                        className={`flex items-center px-4 py-2 rounded-md ${
-                            pathname === "/"
-                                ? "bg-[#0f172a] text-white"
-                                : ""
-                        }`}
-                    >
-                        <BarChart2 className="w-4 h-4 mr-2" />
-                        <span className="text-sm font-semibold">Dashboard</span>
-                    </Link>
-
                     <Link
                         to={"/team-members"}
                         className={`flex items-center px-4 py-2 rounded-md ${

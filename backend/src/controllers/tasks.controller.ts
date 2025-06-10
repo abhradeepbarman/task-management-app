@@ -22,19 +22,65 @@ const taskControllers = {
                 ? parseInt(req.query.limit as string)
                 : null;
 
+            const {
+                projectId,
+                memberId,
+                status,
+                search, // title or description
+                startDate,
+                endDate,
+            } = req.query;
+
+            // Base filter
+            const filter: any = { adminId };
+
+            // Filter by project
+            if (projectId) {
+                filter.projectId = projectId;
+            }
+
+            // Filter by assigned member
+            if (memberId) {
+                filter.assignedMembers = memberId;
+            }
+
+            // Filter by task status
+            if (status) {
+                filter.status = status;
+            }
+
+            // Filter by date range 
+            if (startDate || endDate) {
+                filter.deadline = {};
+                if (startDate) {
+                    filter.deadline.$gte = new Date(startDate as string);
+                }
+                if (endDate) {
+                    filter.deadline.$lte = new Date(endDate as string);
+                }
+            }
+
+            // Search in title or description (case-insensitive)
+            if (search) {
+                filter.$or = [
+                    { title: { $regex: search, $options: "i" } },
+                    { description: { $regex: search, $options: "i" } },
+                ];
+            }
+
             let tasks;
             let total;
 
             if (page && limit) {
                 const skip = (page - 1) * limit;
 
-                tasks = await Task.find({ adminId })
+                tasks = await Task.find(filter)
                     .skip(skip)
                     .limit(limit)
                     .populate("assignedMembers")
                     .populate("projectId");
 
-                total = await Task.countDocuments({ adminId });
+                total = await Task.countDocuments(filter);
 
                 return res.status(200).send(
                     ResponseHandler(200, "success", {
@@ -48,7 +94,7 @@ const taskControllers = {
                     })
                 );
             } else {
-                tasks = await Task.find({ adminId })
+                tasks = await Task.find(filter)
                     .populate("assignedMembers")
                     .populate("projectId");
 

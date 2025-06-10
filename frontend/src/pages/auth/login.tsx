@@ -33,7 +33,7 @@ const Login = () => {
 
     useEffect(() => {
         if (accessToken) {
-            navigate("/");
+            navigate("/team-members");
         }
     }, [accessToken, navigate]);
 
@@ -50,7 +50,7 @@ const Login = () => {
                 "refreshToken",
                 response.data.data.refresh_token
             );
-            navigate("/");
+            navigate("/team-members");
         } catch (error) {
             console.log("error", error);
             if (error instanceof AxiosError) {

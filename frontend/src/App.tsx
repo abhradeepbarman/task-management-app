@@ -2,12 +2,11 @@ import { Route, Routes } from "react-router-dom";
 import Login from "./pages/auth/login";
 import Register from "./pages/auth/register";
 import Layout from "./pages/dashboard/layout";
-import Main from "./pages/dashboard/main/main";
 import Projects from "./pages/dashboard/projects/projects";
 import Tasks from "./pages/dashboard/tasks/tasks";
 import TeamMembers from "./pages/dashboard/team-members/team-members";
-import ProtectedRoute from "./routes/ProtectedRoute";
 import NotFound from "./pages/not-found/not-found";
+import ProtectedRoute from "./routes/ProtectedRoute";
 
 const App = () => {
     return (
@@ -23,8 +22,11 @@ const App = () => {
                         </ProtectedRoute>
                     }
                 >
-                    <Route index path="" element={<Main />} />
-                    <Route path="team-members" element={<TeamMembers />} />
+                    <Route
+                        index
+                        path="team-members"
+                        element={<TeamMembers />}
+                    />
                     <Route path="projects" element={<Projects />} />
                     <Route path="tasks" element={<Tasks />} />
                 </Route>
