@@ -2,11 +2,13 @@ import { Request, Response } from "express";
 import TeamMember from "../models/team-member.model";
 import addTeamMemberSchema from "../validators/team-members/add-team-member.validator";
 import editTeamMemberSchema from "../validators/team-members/edit-team-member.validator";
+import Project from "../models/project.model";
 
 const teamMemberControllers = {
     async getAllTeamMembers(req: Request, res: Response): Promise<any> {
         try {
             const adminId = req.user?.id;
+            const projectId = req.query?.projectId;
 
             const page = req.query.page
                 ? parseInt(req.query.page as string)
@@ -36,6 +38,22 @@ const teamMemberControllers = {
                         limit,
                         totalPages: Math.ceil(total / limit),
                     },
+                });
+            } else if (projectId) {
+                const projectDetails = await Project.findOne({
+                    _id: projectId,
+                    adminId,
+                }).populate("teamMembers");
+                if (!projectDetails) {
+                    return res.status(404).json({
+                        success: false,
+                        message: "Project not found",
+                    });
+                }
+
+                return res.status(200).json({
+                    success: true,
+                    data: projectDetails.teamMembers,
                 });
             } else {
                 // No pagination: fetch all

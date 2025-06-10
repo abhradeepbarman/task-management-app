@@ -19,6 +19,11 @@ const taskSchema = new Schema({
         ref: "Project",
         required: true,
     },
+    adminId: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+    },
     assignedMembers: [
         {
             type: Schema.Types.ObjectId,
@@ -32,6 +37,7 @@ const taskSchema = new Schema({
             taskStatus.PENDING,
             taskStatus.IN_PROGRESS,
             taskStatus.COMPLETED,
+            taskStatus.CANCELLED,
         ],
         default: "pending",
     },

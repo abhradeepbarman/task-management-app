@@ -1,5 +1,4 @@
-import axiosInstance from "@/lib/axios";
-import AddTeamMembers from "./__components/add-team-members";
+import { Button } from "@/components/ui/button";
 import {
     Table,
     TableBody,
@@ -8,12 +7,16 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import axiosInstance from "@/lib/axios";
 import { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { Button } from "@/components/ui/button";
+import AddTeamMembers from "./__components/add-team-members";
+import EditTeamMember from "./__components/edit-team-member";
+import DeleteTeamMember from "./__components/delete-team-member";
 
 export interface TeamMember {
+    _id: string;
     name: string;
     email: string;
     designation: string;
@@ -44,7 +47,7 @@ const TeamMembers = () => {
         };
 
         fetchTeamMembers();
-    }, []);
+    }, [currentPage]);
 
     const totalPages = Math.ceil(teamMembers.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -67,14 +70,27 @@ const TeamMembers = () => {
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Designation</TableHead>
+                        <TableHead>Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {currentItems.map((member, index) => (
-                        <TableRow key={index}>
+                    {currentItems.map((member) => (
+                        <TableRow key={member._id}>
                             <TableCell>{member.name}</TableCell>
                             <TableCell>{member.email}</TableCell>
                             <TableCell>{member.designation}</TableCell>
+                            <TableCell>
+                                <div className="flex items-center gap-2">
+                                    <EditTeamMember
+                                        teamMember={member}
+                                        setTeamMembers={setTeamMembers}
+                                    />
+                                    <DeleteTeamMember
+                                        teamMember={member}
+                                        setTeamMembers={setTeamMembers}
+                                    />
+                                </div>
+                            </TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
