@@ -59,7 +59,7 @@ const AddProject = ({
     useEffect(() => {
         const fetchTeamMembers = async () => {
             const response = await axiosInstance.get("/teams");
-            setTeamMembers(response.data.data);
+            setTeamMembers(response.data.data.data);
         };
         fetchTeamMembers();
     }, []);

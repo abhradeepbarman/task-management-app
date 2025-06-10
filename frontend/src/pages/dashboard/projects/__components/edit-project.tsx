@@ -60,7 +60,7 @@ const EditProject = ({ project, setProjects }: EditProjectProps) => {
     useEffect(() => {
         const fetchTeamMembers = async () => {
             const response = await axiosInstance.get("/teams");
-            setTeamMembers(response.data.data);
+            setTeamMembers(response.data.data.data);
             setSelectedTeamMembers(project.teamMembers);
         };
         fetchTeamMembers();
@@ -174,7 +174,7 @@ const EditProject = ({ project, setProjects }: EditProjectProps) => {
                                 <SelectValue placeholder="Select team members" />
                             </SelectTrigger>
                             <SelectContent>
-                                {teamMembers.map((member) => (
+                                {teamMembers?.map((member) => (
                                     <SelectItem
                                         key={member._id}
                                         value={member._id}

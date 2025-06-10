@@ -115,9 +115,13 @@ const taskControllers = {
                 adminId,
             });
 
+            const populatedTask = await Task.findById(task._id)
+                .populate("assignedMembers")
+                .populate("projectId");
+
             return res
                 .status(201)
-                .send(ResponseHandler(201, "Task created", task));
+                .send(ResponseHandler(201, "Task created", populatedTask));
         } catch (error) {
             return next(error);
         }

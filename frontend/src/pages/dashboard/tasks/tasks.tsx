@@ -1,7 +1,11 @@
-import axiosInstance from "@/lib/axios";
-import AddTask from "./__components/add-task";
-import EditTask from "./__components/edit-task";
-import DeleteTask from "./__components/delete-task";
+import { Button } from "@/components/ui/button";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import {
     Table,
     TableBody,
@@ -10,17 +14,21 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { taskStatus } from "@/constants";
+import axiosInstance from "@/lib/axios";
 import { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { Button } from "@/components/ui/button";
+import AddTask from "./__components/add-task";
+import DeleteTask from "./__components/delete-task";
+import EditTask from "./__components/edit-task";
 
 export interface Task {
     _id: string;
     title: string;
     description: string;
     deadline: string;
-    project: {
+    projectId: {
         _id: string;
         name: string;
     };
@@ -30,12 +38,13 @@ export interface Task {
         email: string;
         designation: string;
     }[];
-    status: "TODO" | "IN_PROGRESS" | "COMPLETED";
+    status: string;
 }
 
 const Tasks = () => {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
     const itemsPerPage = 10;
 
     useEffect(() => {
@@ -45,7 +54,8 @@ const Tasks = () => {
                     `/tasks?page=${currentPage}&limit=${itemsPerPage}`
                 );
                 if (response.data?.success) {
-                    setTasks(response.data.data);
+                    setTasks(response.data.data.data);
+                    setTotalPages(response.data.data.pagination.totalPages);
                 }
             } catch (error) {
                 console.log(error);
@@ -60,13 +70,30 @@ const Tasks = () => {
         fetchTasks();
     }, [currentPage]);
 
-    const totalPages = Math.ceil(tasks.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const currentItems = tasks.slice(startIndex, endIndex);
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
+    };
+
+    const changeTaskStatus = async (status: string, taskId: string) => {
+        try {
+            const response = await axiosInstance.put(`/tasks/${taskId}`, {
+                status,
+            });
+            if (response.data?.success) {
+                toast.success("Task status updated successfully");
+            }
+        } catch (error) {
+            console.log(error);
+            if (error instanceof AxiosError) {
+                toast.error(error.response?.data.message);
+            } else {
+                toast.error("Something went wrong");
+            }
+        }
     };
 
     return (
@@ -107,21 +134,40 @@ const Tasks = () => {
                                 ))}
                             </TableCell>
                             <TableCell>
-                                <span
-                                    className={`px-2 py-1 rounded-full text-xs ${
-                                        task.status === "COMPLETED"
-                                            ? "bg-green-100 text-green-800"
-                                            : task.status === "IN_PROGRESS"
-                                            ? "bg-yellow-100 text-yellow-800"
-                                            : "bg-gray-100 text-gray-800"
-                                    }`}
+                                <Select
+                                    defaultValue={task.status}
+                                    onValueChange={(value) =>
+                                        changeTaskStatus(value, task._id)
+                                    }
                                 >
-                                    {task.status}
-                                </span>
+                                    <SelectTrigger className="w-[180px]">
+                                        <SelectValue placeholder="Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value={taskStatus.PENDING}>
+                                            Pending
+                                        </SelectItem>
+                                        <SelectItem
+                                            value={taskStatus.IN_PROGRESS}
+                                        >
+                                            In Progress
+                                        </SelectItem>
+                                        <SelectItem
+                                            value={taskStatus.COMPLETED}
+                                        >
+                                            Completed
+                                        </SelectItem>
+                                        <SelectItem
+                                            value={taskStatus.CANCELLED}
+                                        >
+                                            Cancelled
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </TableCell>
                             <TableCell>
                                 <div className="flex items-center gap-2">
-                                    {/* <EditTask task={task} setTasks={setTasks} /> */}
+                                    <EditTask task={task} setTasks={setTasks} />
                                     <DeleteTask
                                         task={task}
                                         setTasks={setTasks}

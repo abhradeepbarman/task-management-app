@@ -35,9 +35,8 @@ const TeamMembers = () => {
                     `/teams?page=${currentPage}&limit=${itemsPerPage}`
                 );
                 if (response.data?.success) {
-                    console.log("hello");
-                    setTeamMembers(response.data.data);
-                    setTotalPages(response.data.pagination.totalPages);
+                    setTeamMembers(response.data.data.data);
+                    setTotalPages(response.data.data.pagination.totalPages);
                 }
             } catch (error) {
                 console.log(error);

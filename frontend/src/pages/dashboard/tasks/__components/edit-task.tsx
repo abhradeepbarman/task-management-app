@@ -18,6 +18,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { taskStatus } from "@/constants";
 import axiosInstance from "@/lib/axios";
 import { AxiosError } from "axios";
 import { useEffect, useState } from "react";
@@ -43,6 +44,7 @@ interface EditTaskProps {
 }
 
 const EditTask = ({ task, setTasks }: EditTaskProps) => {
+    console.log("task", task);
     const [open, setOpen] = useState(false);
     const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
@@ -60,7 +62,7 @@ const EditTask = ({ task, setTasks }: EditTaskProps) => {
             title: task.title,
             description: task.description,
             deadline: new Date(task.deadline).toISOString().split("T")[0],
-            project: task.project._id,
+            project: task.projectId.name,
             assignedMembers: task.assignedMembers.map((member) => member._id),
             status: task.status,
         },
@@ -73,7 +75,9 @@ const EditTask = ({ task, setTasks }: EditTaskProps) => {
                     axiosInstance.get("/teams"),
                     axiosInstance.get("/projects"),
                 ]);
-                setTeamMembers(teamResponse.data.data);
+
+                console.log("project res", projectsResponse);
+                setTeamMembers(teamResponse.data.data.data);
                 setProjects(projectsResponse.data.data);
                 setSelectedTeamMembers(task.assignedMembers);
             } catch (error) {
@@ -94,7 +98,7 @@ const EditTask = ({ task, setTasks }: EditTaskProps) => {
         deadline: string;
         project: string;
         assignedMembers: string[];
-        status: "TODO" | "IN_PROGRESS" | "COMPLETED";
+        status: string;
     }) => {
         try {
             const response = await axiosInstance.put(
@@ -213,13 +217,13 @@ const EditTask = ({ task, setTasks }: EditTaskProps) => {
                             onValueChange={(value) =>
                                 setValue("project", value)
                             }
-                            defaultValue={task.project._id}
+                            defaultValue={task.projectId._id}
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="Select project" />
                             </SelectTrigger>
                             <SelectContent>
-                                {projects.map((project) => (
+                                {projects?.map((project) => (
                                     <SelectItem
                                         key={project._id}
                                         value={project._id}
@@ -286,21 +290,26 @@ const EditTask = ({ task, setTasks }: EditTaskProps) => {
                     <div>
                         <Label htmlFor="status">Status</Label>
                         <Select
-                            onValueChange={(
-                                value: "TODO" | "IN_PROGRESS" | "COMPLETED"
-                            ) => setValue("status", value)}
+                            onValueChange={(value) =>
+                                setValue("status", value)
+                            }
                             defaultValue={task.status}
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="Select status" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="TODO">To Do</SelectItem>
-                                <SelectItem value="IN_PROGRESS">
+                                <SelectItem value={taskStatus.PENDING}>
+                                    Pending
+                                </SelectItem>
+                                <SelectItem value={taskStatus.IN_PROGRESS}>
                                     In Progress
                                 </SelectItem>
-                                <SelectItem value="COMPLETED">
+                                <SelectItem value={taskStatus.COMPLETED}>
                                     Completed
+                                </SelectItem>
+                                <SelectItem value={taskStatus.CANCELLED}>
+                                    Cancelled
                                 </SelectItem>
                             </SelectContent>
                         </Select>

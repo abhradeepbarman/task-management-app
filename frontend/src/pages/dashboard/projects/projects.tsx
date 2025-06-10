@@ -41,8 +41,9 @@ const Projects = () => {
                     `/projects?page=${currentPage}&limit=${itemsPerPage}`
                 );
                 if (response.data?.success) {
-                    setProjects(response.data.data);
-                    setTotalPages(response.data.pagination.totalPages);
+                    console.log("hello", response)
+                    setProjects(response.data.data.data);
+                    setTotalPages(response.data.data.pagination.totalPages);
                 }
             } catch (error) {
                 console.log(error);
@@ -77,7 +78,7 @@ const Projects = () => {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {projects.map((project, index) => (
+                    {projects?.map((project, index) => (
                         <TableRow key={index}>
                             <TableCell>{project.name}</TableCell>
                             <TableCell>{project.description}</TableCell>

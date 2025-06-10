@@ -24,6 +24,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import type { Task } from "../tasks";
+import { taskStatus } from "@/constants";
 
 interface TeamMember {
     _id: string;
@@ -61,7 +62,7 @@ const AddTask = ({
             deadline: "",
             projectId: "",
             assignedMembers: [] as string[],
-            status: "TODO",
+            status: taskStatus.PENDING,
         },
     });
 
@@ -87,7 +88,7 @@ const AddTask = ({
             const response = await axiosInstance.get(
                 `/teams?projectId=${value}`
             );
-            setTeamMembers(response.data.data);
+            setTeamMembers(response.data.data.data);
         } catch (error) {
             console.log(error);
             if (error instanceof AxiosError) {
@@ -112,6 +113,7 @@ const AddTask = ({
                 toast.success("Task added successfully");
                 reset();
                 setSelectedTeamMembers([]);
+                console.log(response);
                 setTasks((prev) => [...prev, response.data.data]);
                 setOpen(false);
             }
@@ -289,22 +291,24 @@ const AddTask = ({
                     <div>
                         <Label htmlFor="status">Status</Label>
                         <Select
-                            onValueChange={(
-                                value: "TODO" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED"
-                            ) => setValue("status", value)}
+                            onValueChange={(value: string) =>
+                                setValue("status", value)
+                            }
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="Select status" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="TODO">To Do</SelectItem>
-                                <SelectItem value="IN_PROGRESS">
+                                <SelectItem value={taskStatus.PENDING}>
+                                    Pending
+                                </SelectItem>
+                                <SelectItem value={taskStatus.IN_PROGRESS}>
                                     In Progress
                                 </SelectItem>
-                                <SelectItem value="COMPLETED">
+                                <SelectItem value={taskStatus.COMPLETED}>
                                     Completed
                                 </SelectItem>
-                                <SelectItem value="CANCELLED">
+                                <SelectItem value={taskStatus.CANCELLED}>
                                     Cancelled
                                 </SelectItem>
                             </SelectContent>
