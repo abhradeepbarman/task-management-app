@@ -75,6 +75,7 @@ const AddProject = ({
                 toast.success("Project added successfully");
                 reset();
                 setSelectedTeamMembers([]);
+                console.log(response.data.data);
                 setProjects((prev) => [...prev, response.data.data]);
                 setOpen(false);
             }

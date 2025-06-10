@@ -32,6 +32,7 @@ const Projects = () => {
     const [projects, setProjects] = useState<Project[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+    const [totalPages, setTotalPages] = useState(1);
 
     useEffect(() => {
         const fetchProjects = async () => {
@@ -41,6 +42,7 @@ const Projects = () => {
                 );
                 if (response.data?.success) {
                     setProjects(response.data.data);
+                    setTotalPages(response.data.pagination.totalPages);
                 }
             } catch (error) {
                 console.log(error);
@@ -54,11 +56,6 @@ const Projects = () => {
 
         fetchProjects();
     }, [currentPage]);
-
-    const totalPages = Math.ceil(projects.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const currentItems = projects.slice(startIndex, endIndex);
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
@@ -80,7 +77,7 @@ const Projects = () => {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {currentItems.map((project, index) => (
+                    {projects.map((project, index) => (
                         <TableRow key={index}>
                             <TableCell>{project.name}</TableCell>
                             <TableCell>{project.description}</TableCell>
@@ -89,8 +86,7 @@ const Projects = () => {
                                     <div key={teamMember._id}>
                                         <span className="font-semibold">
                                             {teamMember.name}
-                                        </span>{" "}
-                                        - {teamMember.email} -{" "}
+                                        </span>{" - "}
                                         {teamMember.designation}
                                     </div>
                                 ))}

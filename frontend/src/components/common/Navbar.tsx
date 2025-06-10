@@ -10,7 +10,7 @@ const Navbar = () => {
         <nav className="flex px-6 py-3 bg-white shadow-sm">
             <div
                 className="text-2xl font-bold text-gray-900 mr-8 cursor-pointer"
-                onClick={() => navigate("/dashboard")}
+                onClick={() => navigate("/")}
             >
                 TaskFlow
             </div>
@@ -18,9 +18,9 @@ const Navbar = () => {
             <div className="flex justify-between w-full items-center">
                 <ul className="flex items-center space-x-6">
                     <Link
-                        to={"/dashboard"}
+                        to={"/"}
                         className={`flex items-center px-4 py-2 rounded-md ${
-                            pathname === "/dashboard"
+                            pathname === "/"
                                 ? "bg-[#0f172a] text-white"
                                 : ""
                         }`}
@@ -30,9 +30,9 @@ const Navbar = () => {
                     </Link>
 
                     <Link
-                        to={"/dashboard/team-members"}
+                        to={"/team-members"}
                         className={`flex items-center px-4 py-2 rounded-md ${
-                            pathname === "/dashboard/team-members"
+                            pathname === "/team-members"
                                 ? "bg-[#0f172a] text-white"
                                 : ""
                         }`}
@@ -42,9 +42,9 @@ const Navbar = () => {
                     </Link>
 
                     <Link
-                        to={"/dashboard/projects"}
+                        to={"/projects"}
                         className={`flex items-center px-4 py-2 rounded-md ${
-                            pathname === "/dashboard/projects"
+                            pathname === "/projects"
                                 ? "bg-[#0f172a] text-white"
                                 : ""
                         }`}
@@ -54,9 +54,9 @@ const Navbar = () => {
                     </Link>
 
                     <Link
-                        to={"/dashboard/tasks"}
+                        to={"/tasks"}
                         className={`flex items-center px-4 py-2 rounded-md ${
-                            pathname === "/dashboard/tasks"
+                            pathname === "/tasks"
                                 ? "bg-[#0f172a] text-white"
                                 : ""
                         }`}

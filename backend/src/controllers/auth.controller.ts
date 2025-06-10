@@ -5,18 +5,23 @@ import { config } from "../config";
 import User from "../models/user.model";
 import loginSchema from "../validators/auth/login.validator";
 import registerSchema from "../validators/auth/register.validator";
+import CustomErrorHandler from "../utils/CustomErrorHandler";
+import ResponseHandler from "../utils/ResponseHandler";
 
 // Register
-const userRegister = async (req: Request, res: Response): Promise<any> => {
+const userRegister = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<any> => {
     const { name, email, password } = registerSchema.parse(req.body);
 
     try {
         const isExist = await User.findOne({ email });
         if (isExist) {
-            return res.status(400).json({
-                success: false,
-                message: "User already exists",
-            });
+            return res.send(
+                CustomErrorHandler.alreadyExist("User already exist")
+            );
         }
 
         const genSalt = await bcrypt.genSalt(10);
@@ -53,42 +58,35 @@ const userRegister = async (req: Request, res: Response): Promise<any> => {
                 secure: false,
                 maxAge: 60 * 60 * 1000,
             })
-            .json({
-                success: true,
-                message: "User registered successfully",
-                data: {
+            .send(
+                ResponseHandler(201, "User registered successfully", {
                     id: user._id,
                     access_token,
                     refresh_token,
-                },
-            });
+                })
+            );
     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Something went wrong",
-        });
+        return next(error);
     }
 };
 
 // Login
-const userLogin = async (req: Request, res: Response): Promise<any> => {
+const userLogin = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<any> => {
     try {
         const { email, password } = loginSchema.parse(req.body);
 
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found",
-            });
+            return res.send(CustomErrorHandler.notFound("User not found"));
         }
 
         const isPasswordCorrect = await bcrypt.compare(password, user.password);
         if (!isPasswordCorrect) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid credentials",
-            });
+            return res.send(CustomErrorHandler.wrongCredentials());
         }
 
         const access_token = jwt.sign({ id: user._id }, config.JWT_SECRET, {
@@ -115,25 +113,24 @@ const userLogin = async (req: Request, res: Response): Promise<any> => {
                 secure: false,
                 maxAge: 60 * 60 * 1000,
             })
-            .json({
-                success: true,
-                message: "User logged in successfully",
-                data: {
+            .send(
+                ResponseHandler(200, "User logged in successfully", {
                     id: user._id,
                     access_token,
                     refresh_token,
-                },
-            });
+                })
+            );
     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Something went wrong",
-        });
+        return next(error);
     }
 };
 
 // Logout
-const userLogout = async (req: Request, res: Response): Promise<any> => {
+const userLogout = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<any> => {
     try {
         const userId = req.user?.id;
         await User.findByIdAndUpdate(userId, { refreshToken: null });
@@ -141,30 +138,24 @@ const userLogout = async (req: Request, res: Response): Promise<any> => {
         return res
             .clearCookie("refresh_token", { httpOnly: true })
             .clearCookie("access_token", { httpOnly: true })
-            .json({
-                success: true,
-                message: "User logged out successfully",
-            });
+            .send(ResponseHandler(200, "User logged out successfully"));
     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Something went wrong",
-        });
+        return next(error);
     }
 };
 
 // Refresh token
 const refreshAccessToken = async (
     req: Request,
-    res: Response
+    res: Response,
+    next: NextFunction
 ): Promise<any> => {
     try {
         const { refresh_token } = req.cookies || req.body;
         if (!refresh_token) {
-            return res.status(401).json({
-                success: false,
-                message: "Refresh token not found",
-            });
+            return res.send(
+                CustomErrorHandler.notFound("Refresh token not found")
+            );
         }
 
         const decoded = jwt.verify(
@@ -173,16 +164,12 @@ const refreshAccessToken = async (
         ) as JwtPayload;
         const user = await User.findById(decoded.id);
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found",
-            });
+            return res
+                .status(404)
+                .send(CustomErrorHandler.notFound("User not found"));
         }
         if (user.refreshToken !== refresh_token)
-            return res.status(403).json({
-                success: false,
-                message: "Invalid refresh token",
-            });
+            return res.send(CustomErrorHandler.unAuthorized());
 
         const accessToken = jwt.sign({ id: user._id }, config.JWT_SECRET, {
             expiresIn: "1h",
@@ -207,20 +194,15 @@ const refreshAccessToken = async (
                 secure: false,
                 maxAge: 60 * 60 * 1000,
             })
-            .json({
-                success: true,
-                message: "Access token refreshed successfully",
-                data: {
+            .send(
+                ResponseHandler(200, "Access token refreshed successfully", {
                     id: user._id,
                     access_token: accessToken,
                     refresh_token: newRefreshToken,
-                },
-            });
+                })
+            );
     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Something went wrong",
-        });
+        return next(error);
     }
 };
 

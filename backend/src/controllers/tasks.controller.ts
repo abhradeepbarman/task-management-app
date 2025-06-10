@@ -1,13 +1,18 @@
-import { Request, Response } from "express";
-import Task from "../models/task.model";
+import { NextFunction, Request, Response } from "express";
 import Project from "../models/project.model";
+import Task from "../models/task.model";
 import TeamMember from "../models/team-member.model";
+import CustomErrorHandler from "../utils/CustomErrorHandler";
+import ResponseHandler from "../utils/ResponseHandler";
 import createTaskSchema from "../validators/task/create-task.validator";
 import updateTaskSchema from "../validators/task/update-task.validator";
-import { taskStatus } from "../constants";
 
 const taskControllers = {
-    async getAllTasks(req: Request, res: Response): Promise<any> {
+    async getAllTasks(
+        req: Request,
+        res: Response,
+        next: NextFunction
+    ): Promise<any> {
         try {
             const adminId = req.user?.id;
             const page = req.query.page
@@ -31,15 +36,17 @@ const taskControllers = {
 
                 total = await Task.countDocuments({ adminId });
 
-                return res.status(200).json({
-                    success: true,
-                    data: tasks,
-                    pagination: {
-                        total,
-                        page,
-                        limit,
-                    },
-                });
+                return res.status(200).send(
+                    ResponseHandler(200, "success", {
+                        data: tasks,
+                        pagination: {
+                            total,
+                            page,
+                            limit,
+                            totalPages: Math.ceil(total / limit),
+                        },
+                    })
+                );
             } else {
                 tasks = await Task.find({ adminId })
                     .populate("assignedMembers")
@@ -47,29 +54,18 @@ const taskControllers = {
 
                 return res
                     .status(200)
-                    .json({
-                        success: true,
-                        data: tasks,
-                        pagination: {
-                            total: tasks.length,
-                            page: 1,
-                            limit: tasks.length,
-                        },
-                    })
-                    .json({
-                        success: true,
-                        data: tasks,
-                    });
+                    .send(ResponseHandler(200, "success", tasks));
             }
         } catch (error) {
-            return res.status(500).json({
-                success: false,
-                message: "Something went wrong",
-            });
+            return next(error);
         }
     },
 
-    async createTask(req: Request, res: Response): Promise<any> {
+    async createTask(
+        req: Request,
+        res: Response,
+        next: NextFunction
+    ): Promise<any> {
         try {
             const {
                 title,
@@ -81,16 +77,17 @@ const taskControllers = {
             } = createTaskSchema.parse(req.body);
             const adminId = req.user?.id;
 
+            console.log("deadline", deadline);
+
             // Verify project exists and belongs to admin
             const project = await Project.findOne({
                 _id: projectId,
                 adminId,
             }).populate("teamMembers");
             if (!project) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Project not found",
-                });
+                return res.send(
+                    CustomErrorHandler.notFound("Project not found")
+                );
             }
 
             const projectTeamMemberIds = project.teamMembers.map((member) =>
@@ -100,45 +97,48 @@ const taskControllers = {
             // verify if all team memebers are related to the project
             assignedMembers.forEach((memberId) => {
                 if (!projectTeamMemberIds.includes(memberId)) {
-                    return res.status(404).json({
-                        success: false,
-                        message: `Team member with ID ${memberId} not found`,
-                    });
+                    return res.send(
+                        CustomErrorHandler.unAuthorized(
+                            `Team ID ${memberId} not authorized`
+                        )
+                    );
                 }
             });
 
             const task = await Task.create({
                 title,
                 description,
-                deadline,
+                deadline: new Date(deadline),
                 projectId,
                 assignedMembers,
-                status: status || taskStatus.PENDING,
-                adminId
+                status: status,
+                adminId,
             });
 
-            return res.status(201).json({ success: true, data: task });
+            return res
+                .status(201)
+                .send(ResponseHandler(201, "Task created", task));
         } catch (error) {
-            console.log(error);
-            return res.status(500).json({
-                success: false,
-                message: "Something went wrong",
-            });
+            return next(error);
         }
     },
 
-    async updateTask(req: Request, res: Response): Promise<any> {
+    async updateTask(
+        req: Request,
+        res: Response,
+        next: NextFunction
+    ): Promise<any> {
         try {
             const taskId = req.params.id;
             const adminId = req.user?.id;
-            const updates = updateTaskSchema.parse(req.body);
+            console.log("1");
 
-            const task = await Task.findById(taskId).populate("projectId");
+            const updates = updateTaskSchema.parse(req.body);
+            console.log("2");
+
+            const task = await Task.findById(taskId);
             if (!task) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Task not found",
-                });
+                return res.send(CustomErrorHandler.notFound("Task not found"));
             }
 
             // Verify project belongs to admin
@@ -146,11 +146,15 @@ const taskControllers = {
                 _id: task.projectId,
                 adminId,
             }).populate("teamMembers");
+
             if (!project) {
-                return res.status(403).json({
-                    success: false,
-                    message: "You are not authorized to update this task",
-                });
+                return res.send(
+                    CustomErrorHandler.notFound("Project not found")
+                );
+            }
+
+            if (!project.adminId.equals(adminId)) {
+                return res.send(CustomErrorHandler.unAuthorized());
             }
 
             // If updating assigned members, verify they exist and belong to admin
@@ -165,50 +169,55 @@ const taskControllers = {
                         adminId,
                     });
                     if (!teamMember) {
-                        return res.status(404).json({
-                            success: false,
-                            message: `Team member with ID ${memberId} not found`,
-                        });
+                        return res.send(
+                            CustomErrorHandler.notFound("Team member not found")
+                        );
                     }
 
                     if (!projectTeamMemberIds.includes(memberId)) {
-                        return res.status(404).json({
-                            success: false,
-                            message: `Team member with ID ${memberId} not found`,
-                        });
+                        return res.send(CustomErrorHandler.unAuthorized());
                     }
                 }
             }
 
-            const updatedTask = await Task.findByIdAndUpdate(taskId, updates, {
-                new: true,
-            })
+            const updatedTask = await Task.findByIdAndUpdate(
+                taskId,
+                {
+                    title: updates.title || task.title,
+                    description: updates.description || task.description,
+                    deadline: updates.deadline || task.deadline,
+                    projectId: updates.projectId || task.projectId,
+                    assignedMembers:
+                        updates.assignedMembers || task.assignedMembers,
+                    status: updates.status || task.status,
+                },
+                {
+                    new: true,
+                }
+            )
                 .populate("projectId")
                 .populate("assignedMembers");
 
-            return res.status(200).json({
-                success: true,
-                data: updatedTask,
-            });
+            return res
+                .status(200)
+                .send(ResponseHandler(200, "Task updated", updatedTask));
         } catch (error) {
-            return res.status(500).json({
-                success: false,
-                message: "Something went wrong",
-            });
+            return next(error);
         }
     },
 
-    async deleteTask(req: Request, res: Response): Promise<any> {
+    async deleteTask(
+        req: Request,
+        res: Response,
+        next: NextFunction
+    ): Promise<any> {
         try {
             const taskId = req.params.id;
             const adminId = req.user?.id;
 
             const task = await Task.findById(taskId).populate("projectId");
             if (!task) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Task not found",
-                });
+                return res.send(CustomErrorHandler.notFound("Task not found"));
             }
 
             // Verify project belongs to admin
@@ -217,22 +226,21 @@ const taskControllers = {
                 adminId,
             });
             if (!project) {
-                return res.status(403).json({
-                    success: false,
-                    message: "You are not authorized to delete this task",
-                });
+                return res.send(
+                    CustomErrorHandler.notFound("Project not found")
+                );
+            }
+
+            if (!project.adminId.equals(adminId)) {
+                return res.send(CustomErrorHandler.unAuthorized());
             }
 
             await Task.findByIdAndDelete(taskId);
-            return res.status(200).json({
-                success: true,
-                message: "Task deleted successfully",
-            });
+            return res
+                .status(200)
+                .send(ResponseHandler(200, "Task deleted successfully"));
         } catch (error) {
-            return res.status(500).json({
-                success: false,
-                message: "Something went wrong",
-            });
+            return next(error);
         }
     },
 };

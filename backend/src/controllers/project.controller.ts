@@ -1,11 +1,18 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import Project from "../models/project.model";
 import createProjectSchema from "../validators/project/create-project.validator";
 import TeamMember from "../models/team-member.model";
 import updateProjectSchema from "../validators/project/update-project.validator";
+import CustomErrorHandler from "../utils/CustomErrorHandler";
+import ResponseHandler from "../utils/ResponseHandler";
+import Task from "../models/task.model";
 
 const projectControllers = {
-    async getAllProjects(req: Request, res: Response): Promise<any> {
+    async getAllProjects(
+        req: Request,
+        res: Response,
+        next: NextFunction
+    ): Promise<any> {
         try {
             const adminId = req.user?.id;
             const page = req.query.page
@@ -28,28 +35,33 @@ const projectControllers = {
 
                 total = await Project.countDocuments({ adminId });
 
-                return res.status(200).json({
-                    success: true,
-                    data: projects,
-                    pagination: {
-                        total,
-                        page,
-                        limit,
-                    },
-                });
+                return res.status(200).send(
+                    ResponseHandler(200, "success", {
+                        data: projects,
+                        pagination: {
+                            total,
+                            page,
+                            limit,
+                            totalPages: Math.ceil(total / limit),
+                        },
+                    })
+                );
             } else {
-                projects = await Project.find({ adminId });
-                return res.status(200).json({ success: true, data: projects });
+                projects = await Project.find({ adminId }).populate("teamMembers");
+                return res
+                    .status(200)
+                    .send(ResponseHandler(200, "success", projects));
             }
         } catch (error) {
-            return res.status(500).json({
-                success: false,
-                message: "Something went wrong",
-            });
+            return next(error);
         }
     },
 
-    async createProject(req: Request, res: Response): Promise<any> {
+    async createProject(
+        req: Request,
+        res: Response,
+        next: NextFunction
+    ): Promise<any> {
         try {
             const { name, description, teamMembers } =
                 createProjectSchema.parse(req.body);
@@ -62,10 +74,9 @@ const projectControllers = {
                 });
 
                 if (!teamMemberDetails) {
-                    return res.status(404).json({
-                        success: false,
-                        message: "Team member not found",
-                    });
+                    return res.send(
+                        CustomErrorHandler.notFound("Team member not found")
+                    );
                 }
             });
 
@@ -75,16 +86,24 @@ const projectControllers = {
                 description,
                 teamMembers,
             });
-            return res.status(200).json({ success: true, data: project });
+
+            const populatedProject = await Project.findById(
+                project._id
+            ).populate("teamMembers");
+
+            return res
+                .status(200)
+                .send(ResponseHandler(200, "success", populatedProject));
         } catch (error) {
-            return res.status(500).json({
-                success: false,
-                message: "Something went wrong",
-            });
+            return next(error);
         }
     },
 
-    async deleteProject(req: Request, res: Response): Promise<any> {
+    async deleteProject(
+        req: Request,
+        res: Response,
+        next: NextFunction
+    ): Promise<any> {
         try {
             const projectId = req.params.id;
             const adminId = req.user?.id;
@@ -94,26 +113,27 @@ const projectControllers = {
                 adminId,
             });
             if (!projectDetails) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Project not found",
-                });
+                return res.send(
+                    CustomErrorHandler.notFound("Project not found")
+                );
             }
 
+            await Task.deleteMany({ projectId });
             await Project.findByIdAndDelete(projectId);
-            return res.status(200).json({
-                success: true,
-                message: "Project deleted successfully",
-            });
+
+            return res
+                .status(200)
+                .send(ResponseHandler(200, "Project deleted successfully"));
         } catch (error) {
-            return res.status(500).json({
-                success: false,
-                message: "Something went wrong",
-            });
+            return next(error);
         }
     },
 
-    async updateProject(req: Request, res: Response): Promise<any> {
+    async updateProject(
+        req: Request,
+        res: Response,
+        next: NextFunction
+    ): Promise<any> {
         try {
             const projectId = req.params.id;
             const { name, description, teamMembers } =
@@ -125,27 +145,41 @@ const projectControllers = {
                 adminId,
             });
             if (!projectDetails) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Project not found",
+                return res.send(
+                    CustomErrorHandler.notFound("Project not found")
+                );
+            }
+
+            if (teamMembers && teamMembers.length > 0) {
+                teamMembers.forEach(async (teamMember) => {
+                    const teamMemberDetails = await TeamMember.find({
+                        _id: teamMember,
+                        adminId,
+                    });
+
+                    if (!teamMemberDetails) {
+                        return res.send(
+                            CustomErrorHandler.notFound("Team member not found")
+                        );
+                    }
                 });
             }
 
             const updatedProject = await Project.findByIdAndUpdate(
                 projectId,
-                { name, description, teamMembers },
+                {
+                    name: name || projectDetails.name,
+                    description: description || projectDetails.description,
+                    teamMembers: teamMembers || projectDetails.teamMembers,
+                },
                 { new: true }
-            );
+            ).populate("teamMembers");
 
-            return res.status(200).json({
-                success: true,
-                data: updatedProject,
-            });
+            return res
+                .status(200)
+                .send(ResponseHandler(200, "success", updatedProject));
         } catch (error) {
-            return res.status(500).json({
-                success: false,
-                message: "Something went wrong",
-            });
+            return next(error);
         }
     },
 };

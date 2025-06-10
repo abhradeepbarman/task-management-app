@@ -12,8 +12,8 @@ import { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import AddTeamMembers from "./__components/add-team-members";
-import EditTeamMember from "./__components/edit-team-member";
 import DeleteTeamMember from "./__components/delete-team-member";
+import EditTeamMember from "./__components/edit-team-member";
 
 export interface TeamMember {
     _id: string;
@@ -25,6 +25,7 @@ export interface TeamMember {
 const TeamMembers = () => {
     const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
     const itemsPerPage = 10;
 
     useEffect(() => {
@@ -34,7 +35,9 @@ const TeamMembers = () => {
                     `/teams?page=${currentPage}&limit=${itemsPerPage}`
                 );
                 if (response.data?.success) {
+                    console.log("hello");
                     setTeamMembers(response.data.data);
+                    setTotalPages(response.data.pagination.totalPages);
                 }
             } catch (error) {
                 console.log(error);
@@ -48,11 +51,6 @@ const TeamMembers = () => {
 
         fetchTeamMembers();
     }, [currentPage]);
-
-    const totalPages = Math.ceil(teamMembers.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const currentItems = teamMembers.slice(startIndex, endIndex);
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
@@ -74,7 +72,7 @@ const TeamMembers = () => {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {currentItems.map((member) => (
+                    {teamMembers.map((member) => (
                         <TableRow key={member._id}>
                             <TableCell>{member.name}</TableCell>
                             <TableCell>{member.email}</TableCell>

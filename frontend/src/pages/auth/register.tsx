@@ -34,7 +34,7 @@ const Register = () => {
 
     useEffect(() => {
         if (accessToken) {
-            navigate("/dashboard");
+            navigate("/");
         }
     }, [accessToken, navigate]);
 
@@ -48,7 +48,7 @@ const Register = () => {
             const response = await axiosInstance.post("/auth/register", data);
             localStorage.setItem("accessToken", response.data.access_token);
             localStorage.setItem("refreshToken", response.data.refresh_token);
-            navigate("/dashboard");
+            navigate("/");
         } catch (error) {
             console.log(error);
             if (error instanceof AxiosError) {
