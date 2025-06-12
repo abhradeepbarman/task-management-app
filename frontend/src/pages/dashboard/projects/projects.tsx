@@ -31,8 +31,8 @@ export interface Project {
 const Projects = () => {
     const [projects, setProjects] = useState<Project[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
     const [totalPages, setTotalPages] = useState(1);
+    const itemsPerPage = 10;
 
     useEffect(() => {
         const fetchProjects = async () => {
@@ -41,7 +41,6 @@ const Projects = () => {
                     `/projects?page=${currentPage}&limit=${itemsPerPage}`
                 );
                 if (response.data?.success) {
-                    console.log("hello", response)
                     setProjects(response.data.data.data);
                     setTotalPages(response.data.data.pagination.totalPages);
                 }
@@ -63,54 +62,68 @@ const Projects = () => {
     };
 
     return (
-        <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
+        <div className="p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <h1 className="text-2xl font-bold">Projects</h1>
                 <AddProject setProjects={setProjects} />
             </div>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Team Members</TableHead>
-                        <TableHead>Actions</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {projects?.map((project, index) => (
-                        <TableRow key={index}>
-                            <TableCell>{project.name}</TableCell>
-                            <TableCell>{project.description}</TableCell>
-                            <TableCell>
-                                {project.teamMembers.map((teamMember) => (
-                                    <div key={teamMember._id}>
-                                        <span className="font-semibold">
-                                            {teamMember.name}
-                                        </span>{" - "}
-                                        {teamMember.designation}
-                                    </div>
-                                ))}
-                            </TableCell>
-                            <TableCell>
-                                <div className="flex items-center gap-2">
-                                    <EditProject
-                                        project={project}
-                                        setProjects={setProjects}
-                                    />
-                                    <DeleteProject
-                                        project={project}
-                                        setProjects={setProjects}
-                                    />
-                                </div>
-                            </TableCell>
+            <div className="overflow-x-auto">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Team Members</TableHead>
+                            <TableHead className="text-right">
+                                Actions
+                            </TableHead>
                         </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+                    </TableHeader>
+                    <TableBody>
+                        {projects?.map((project) => (
+                            <TableRow key={project._id}>
+                                <TableCell className="font-medium">
+                                    {project.name}
+                                </TableCell>
+                                <TableCell>{project.description}</TableCell>
+                                <TableCell>
+                                    <div className="space-y-1">
+                                        {project.teamMembers.map(
+                                            (teamMember) => (
+                                                <div
+                                                    key={teamMember._id}
+                                                    className="text-sm"
+                                                >
+                                                    <span className="font-medium">
+                                                        {teamMember.name}
+                                                    </span>
+                                                    {" - "}
+                                                    {teamMember.designation}
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex justify-end items-center gap-2">
+                                        <EditProject
+                                            project={project}
+                                            setProjects={setProjects}
+                                        />
+                                        <DeleteProject
+                                            project={project}
+                                            setProjects={setProjects}
+                                        />
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
 
             {/* Pagination */}
-            <div className="flex justify-center items-center mt-4 gap-2">
+            <div className="flex justify-center items-center mt-6 gap-2">
                 <Button
                     variant="outline"
                     onClick={() => handlePageChange(currentPage - 1)}

@@ -56,45 +56,51 @@ const TeamMembers = () => {
     };
 
     return (
-        <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
+        <div className="p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <h1 className="text-2xl font-bold">Team Members</h1>
                 <AddTeamMembers setTeamMembers={setTeamMembers} />
             </div>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Designation</TableHead>
-                        <TableHead>Actions</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {teamMembers.map((member) => (
-                        <TableRow key={member._id}>
-                            <TableCell>{member.name}</TableCell>
-                            <TableCell>{member.email}</TableCell>
-                            <TableCell>{member.designation}</TableCell>
-                            <TableCell>
-                                <div className="flex items-center gap-2">
-                                    <EditTeamMember
-                                        teamMember={member}
-                                        setTeamMembers={setTeamMembers}
-                                    />
-                                    <DeleteTeamMember
-                                        teamMember={member}
-                                        setTeamMembers={setTeamMembers}
-                                    />
-                                </div>
-                            </TableCell>
+            <div className="overflow-x-auto">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Designation</TableHead>
+                            <TableHead className="text-right">
+                                Actions
+                            </TableHead>
                         </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+                    </TableHeader>
+                    <TableBody>
+                        {teamMembers.map((member) => (
+                            <TableRow key={member._id}>
+                                <TableCell className="font-medium">
+                                    {member.name}
+                                </TableCell>
+                                <TableCell>{member.email}</TableCell>
+                                <TableCell>{member.designation}</TableCell>
+                                <TableCell>
+                                    <div className="flex justify-end items-center gap-2">
+                                        <EditTeamMember
+                                            teamMember={member}
+                                            setTeamMembers={setTeamMembers}
+                                        />
+                                        <DeleteTeamMember
+                                            teamMember={member}
+                                            setTeamMembers={setTeamMembers}
+                                        />
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
 
             {/* Pagination */}
-            <div className="flex justify-center items-center gap-2 mt-4">
+            <div className="flex justify-center items-center mt-6 gap-2">
                 <Button
                     variant="outline"
                     onClick={() => handlePageChange(currentPage - 1)}

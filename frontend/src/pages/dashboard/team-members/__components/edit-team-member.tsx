@@ -30,7 +30,6 @@ const EditTeamMember = ({
         register,
         handleSubmit,
         formState: { errors },
-        reset,
     } = useForm({
         defaultValues: {
             name: teamMember.name,
