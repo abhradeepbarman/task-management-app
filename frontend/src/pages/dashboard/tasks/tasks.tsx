@@ -20,6 +20,14 @@ import axiosInstance from "@/lib/axios";
 import { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 import type { DateRange } from "react-day-picker";
+import { Calendar } from "@/components/ui/calendar";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import type { Project } from "../projects/projects";
 import AddTask from "./__components/add-task";
@@ -53,7 +61,7 @@ const Tasks = () => {
     const [memberFilter, setMemberFilter] = useState("");
     const [statusFilter, setStatusFilter] = useState("");
     const [searchText, setSearchText] = useState("");
-    const [dateRange] = useState<DateRange | undefined>(
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(
         undefined
     );
     const [projects, setProjects] = useState<Project[]>([]);
@@ -162,63 +170,130 @@ const Tasks = () => {
                 <AddTask setTasks={setTasks} />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <Select onValueChange={setProjectFilter}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Filter by Project" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {projects.map((project) => (
-                            <SelectItem key={project._id} value={project._id}>
-                                {project.name}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
+                <div className="w-full">
+                    <Select onValueChange={setProjectFilter}>
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Filter by Project" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {projects.map((project) => (
+                                <SelectItem
+                                    key={project._id}
+                                    value={project._id}
+                                >
+                                    {project.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="w-full">
+                    <Select onValueChange={setMemberFilter}>
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Filter by Member" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {teams?.map((team) => (
+                                <SelectItem key={team._id} value={team._id}>
+                                    {team.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="w-full">
+                    <Select
+                        onValueChange={(val) =>
+                            setStatusFilter(val === "ALL" ? "" : val)
+                        }
+                    >
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Filter by Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="ALL">All</SelectItem>
+                            <SelectItem value={taskStatus.PENDING}>
+                                Pending
                             </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-
-                <Select onValueChange={setMemberFilter}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Filter by Member" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {teams?.map((team) => (
-                            <SelectItem key={team._id} value={team._id}>
-                                {team.name}
+                            <SelectItem value={taskStatus.IN_PROGRESS}>
+                                In Progress
                             </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                            <SelectItem value={taskStatus.COMPLETED}>
+                                Completed
+                            </SelectItem>
+                            <SelectItem value={taskStatus.CANCELLED}>
+                                Cancelled
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
 
-                <Select
-                    onValueChange={(val) =>
-                        setStatusFilter(val === "ALL" ? "" : val)
-                    }
-                >
-                    <SelectTrigger>
-                        <SelectValue placeholder="Filter by Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="ALL">All</SelectItem>
-                        <SelectItem value={taskStatus.PENDING}>
-                            Pending
-                        </SelectItem>
-                        <SelectItem value={taskStatus.IN_PROGRESS}>
-                            In Progress
-                        </SelectItem>
-                        <SelectItem value={taskStatus.COMPLETED}>
-                            Completed
-                        </SelectItem>
-                        <SelectItem value={taskStatus.CANCELLED}>
-                            Cancelled
-                        </SelectItem>
-                    </SelectContent>
-                </Select>
+                <div className="w-full">
+                    <div className="flex gap-2">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className="w-full justify-start text-left font-normal"
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dateRange?.from ? (
+                                        dateRange.to ? (
+                                            <>
+                                                {format(
+                                                    dateRange.from,
+                                                    "LLL dd, y"
+                                                )}{" "}
+                                                -{" "}
+                                                {format(
+                                                    dateRange.to,
+                                                    "LLL dd, y"
+                                                )}
+                                            </>
+                                        ) : (
+                                            format(dateRange.from, "LLL dd, y")
+                                        )
+                                    ) : (
+                                        <span>Pick a date range</span>
+                                    )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                                className="w-auto p-0"
+                                align="start"
+                            >
+                                <Calendar
+                                    initialFocus
+                                    mode="range"
+                                    defaultMonth={dateRange?.from}
+                                    selected={dateRange}
+                                    onSelect={setDateRange}
+                                    numberOfMonths={2}
+                                />
+                            </PopoverContent>
+                        </Popover>
+                        {dateRange && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDateRange(undefined)}
+                            >
+                                ×
+                            </Button>
+                        )}
+                    </div>
+                </div>
 
-                <Input
-                    placeholder="Search title or description"
-                    value={searchText}
-                    onChange={(e) => setSearchText(e.target.value)}
-                />
+                <div className="w-full sm:col-span-2 lg:col-span-3 xl:col-span-4">
+                    <Input
+                        placeholder="Search title or description"
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                    />
+                </div>
             </div>
 
             <div className="overflow-x-auto">
